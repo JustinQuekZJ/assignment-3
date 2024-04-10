@@ -1,0 +1,52 @@
+* {
+    font-family: sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: transparent; /* Set background color to transparent */
+}
+
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: calc(100% - 300px); /* Adjusted width to accommodate sidebar */
+    margin-left: 300px; /* Added margin to avoid overlaying the sidebar */
+}
+
+.mapboxgl-popup {
+    font-size: 12px;
+}
+
+.mapboxgl-popup-content {
+    padding: 10px;
+}
+
+.sidebar {
+    background-color: #f0f0f0;
+    padding: 20px;
+    width: 260px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    overflow-y: auto;
+    border-right: 1px solid #ccc;
+}
+
+.sidebar h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.sidebar p {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.sidebar a {
+    color: #007bff;
+    text-decoration: none;
+}
