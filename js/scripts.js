@@ -23,6 +23,84 @@ const geocoder = new MapboxGeocoder({
     mapboxgl: mapboxgl
 })
 
+
+// Function to calculate distance between two points
+function calculateDistance(coord1, coord2) {
+    // Using Haversine formula to calculate distance
+    const R = 6371e3; // Earth's radius in meters
+    const φ1 = coord1[1] * Math.PI / 180; // Latitude of point 1 in radians
+    const φ2 = coord2[1] * Math.PI / 180; // Latitude of point 2 in radians
+    const Δφ = (coord2[1] - coord1[1]) * Math.PI / 180; // Difference in latitude in radians
+    const Δλ = (coord2[0] - coord1[0]) * Math.PI / 180; // Difference in longitude in radians
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // Distance in meters
+}
+
+// Function to find the three nearest hawker centers to a given location
+function findNearestHawkerCenters(userLocation) {
+    // Sort hawkerData by distance to userLocation
+    hawkerData.sort((a, b) => {
+        const distanceA = calculateDistance(userLocation, [a.longitude, a.latitude]);
+        const distanceB = calculateDistance(userLocation, [b.longitude, b.latitude]);
+        return distanceA - distanceB;
+    });
+
+    // Return the three nearest hawker centers
+    return hawkerData.slice(0, 3);
+}
+
+// Function to display routes from user's location to the nearest hawker centers
+function displayRoutes(nearestHawkerCenters) {
+    // Loop through the nearest hawker centers and display routes
+    nearestHawkerCenters.forEach(function (hawkerCenter) {
+        var routeCoordinates = [
+            [userLocation[0], userLocation[1]],
+            [hawkerCenter.longitude, hawkerCenter.latitude]
+        ];
+
+        // Add a layer to the map with the route
+        map.addLayer({
+            id: 'route-' + hawkerCenter.Name,
+            type: 'line',
+            source: {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: routeCoordinates
+                    }
+                }
+            },
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#007bff',
+                'line-width': 5
+            }
+        });
+    });
+}
+
+
+// Declare userLocation variable outside the event listener
+let userLocation;
+
+// Add event listener for the geocoder result event
+geocoder.on('result', function (e) {
+    userLocation = e.result.geometry.coordinates; // Set the coordinates of the selected location
+    const nearestHawkerCenters = findNearestHawkerCenters(userLocation); // Find the nearest hawker centers
+    displayRoutes(nearestHawkerCenters); // Display routes to the nearest hawker centers
+});
+
 map.addControl(geocoder)
 
 // Adding navigation control
@@ -57,3 +135,8 @@ hawkerData.forEach(function (hawkerRecord) {
         .setPopup(popup)
         .addTo(map);
 })
+
+
+
+
+
