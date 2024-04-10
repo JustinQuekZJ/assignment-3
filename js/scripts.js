@@ -54,8 +54,41 @@ function findNearestHawkerCenters(userLocation) {
     return hawkerData.slice(0, 3);
 }
 
+// Declare an array to store route IDs
+let routeIds = [];
+
+// Add event listener for the geocoder clear event
+geocoder.on('clear', function() {
+    // Remove existing route layers
+    routeIds.forEach(function (routeId) {
+        if (map.getLayer(routeId)) {
+            map.removeLayer(routeId);
+        }
+        if (map.getSource(routeId)) {
+            map.removeSource(routeId);
+        }
+    });
+
+    // Clear the array of route IDs
+    routeIds = [];
+});
+
+
 // Function to display routes from user's location to the nearest hawker centers
 function displayRoutes(nearestHawkerCenters) {
+    // Remove existing route layers
+    routeIds.forEach(function (routeId) {
+        if (map.getLayer(routeId)) {
+            map.removeLayer(routeId);
+        }
+        if (map.getSource(routeId)) {
+            map.removeSource(routeId);
+        }
+    });
+
+    // Clear the array of route IDs
+    routeIds = [];
+
     // Loop through the nearest hawker centers and display routes
     nearestHawkerCenters.forEach(function (hawkerCenter) {
         var routeCoordinates = [
@@ -63,9 +96,12 @@ function displayRoutes(nearestHawkerCenters) {
             [hawkerCenter.longitude, hawkerCenter.latitude]
         ];
 
+        var routeId = 'route-' + hawkerCenter.Name;
+        routeIds.push(routeId); // Store the route ID in the array
+
         // Add a layer to the map with the route
         map.addLayer({
-            id: 'route-' + hawkerCenter.Name,
+            id: routeId,
             type: 'line',
             source: {
                 type: 'geojson',
@@ -90,6 +126,39 @@ function displayRoutes(nearestHawkerCenters) {
     });
 }
 
+// Declare variables to store marker instances
+let markers = [];
+
+// Function to create markers for hawker centers
+function createMarkers(hawkerCenters) {
+    // Clear existing markers
+    markers.forEach(marker => marker.remove());
+    markers = [];
+
+    // Create markers for the three nearest hawker centers
+    hawkerCenters.forEach(hawkerCenter => {
+        const popupContent = `
+            <div>
+                <img src="${hawkerCenter.image}" style="max-width: 100%;" />
+                <p>${hawkerCenter.Name}</p>
+            </div>
+        `;
+        const popup = new mapboxgl.Popup({
+            offset: 24,
+            anchor: 'bottom'
+        }).setHTML(popupContent);
+
+        const marker = new mapboxgl.Marker({
+            color: 'red', // Set color to red for all markers
+            scale: 0.7
+        })
+        .setLngLat([hawkerCenter.longitude, hawkerCenter.latitude])
+        .setPopup(popup)
+        .addTo(map);
+
+        markers.push(marker);
+    });
+}
 
 // Declare userLocation variable outside the event listener
 let userLocation;
@@ -97,8 +166,26 @@ let userLocation;
 // Add event listener for the geocoder result event
 geocoder.on('result', function (e) {
     userLocation = e.result.geometry.coordinates; // Set the coordinates of the selected location
+    
+    // Set a predefined zoom level
+    const zoomLevel = 14; // Adjust this value as needed
+    
+    // Set the map center and zoom level
+    map.flyTo({
+        center: userLocation,
+        zoom: zoomLevel
+    });
+    
     const nearestHawkerCenters = findNearestHawkerCenters(userLocation); // Find the nearest hawker centers
     displayRoutes(nearestHawkerCenters); // Display routes to the nearest hawker centers
+    createMarkers(nearestHawkerCenters); // Create markers for the nearest hawker centers
+});
+
+// Add event listener for the geocoder clear event
+geocoder.on('clear', function() {
+    // Remove existing markers
+    markers.forEach(marker => marker.remove());
+    markers = [];
 });
 
 map.addControl(geocoder)
